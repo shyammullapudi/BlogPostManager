@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Check - JSONPlaceholder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 24px;
+        background: #f7f7f7;
+        color: #111;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      button {
+        padding: 10px 14px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #fafafa;
+        border: 1px solid #eee;
+        padding: 12px;
+        border-radius: 6px;
+        max-height: 320px;
+        overflow: auto;
+      }
+      .ok {
+        color: #0a7d1f;
+        font-weight: 700;
+      }
+      .err {
+        color: #c62828;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>JSONPlaceholder API Checker</h1>
+    <div class="row">
+      <button id="checkUsers">Check /users</button>
+      <button id="checkPosts">Check /posts</button>
+      <button id="checkAll">Check All</button>
+      <button id="clear">Clear</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+      const USERS_URL = "https://jsonplaceholder.typicode.com/users";
+      const POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
+      const output = document.getElementById("output");
+
+      function addCard(title, statusText, ok, data) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =
+          "<h3>" + title + "</h3>" +
+          "<p class='" + (ok ? "ok" : "err") + "'>" + statusText + "</p>";
+        if (data !== undefined) {
+          const pre = document.createElement("pre");
+          pre.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+          card.appendChild(pre);
+        }
+        output.prepend(card);
+      }
+
+      function validateUserShape(user) {
+        return Boolean(
+          user &&
+          user.id &&
+          user.name &&
+          user.username &&
+          user.email &&
+          user.address &&
+          user.address.street &&
+          user.address.city &&
+          user.address.geo &&
+          user.address.geo.lat &&
+          user.phone &&
+          user.website &&
+          user.company &&
+          user.company.name
+        );
+      }
+
+      function validatePostShape(post) {
+        return Boolean(
+          post &&
+          post.userId &&
+          post.id &&
+          typeof post.title === "string" &&
+          typeof post.body === "string"
+        );
+      }
+
+      async function checkUsers() {
+        try {
+          const res = await fetch(USERS_URL);
+          if (!res.ok) {
+            addCard("GET /users", "HTTP " + res.status + " " + res.statusText, false);
+            return;
+          }
+          const data = await res.json();
+          const first = data[0];
+          const valid = validateUserShape(first);
+          addCard(
+            "GET /users",
+            valid
+              ? "Success: response + first object format looks correct"
+              : "Received data, but first object format does not match expected fields",
+            valid,
+            first
+          );
+        } catch (err) {
+          addCard("GET /users", "Request failed: " + err.message, false);
+        }
+      }
+
+      async function checkPosts() {
+        try {
+          const res = await fetch(POSTS_URL);
+          if (!res.ok) {
+            addCard("GET /posts", "HTTP " + res.status + " " + res.statusText, false);
+            return;
+          }
+          const data = await res.json();
+          const first = data[0];
+          const valid = validatePostShape(first);
+          addCard(
+            "GET /posts",
+            valid
+              ? "Success: response + first object format looks correct"
+              : "Received data, but first object format does not match expected fields",
+            valid,
+            first
+          );
+        } catch (err) {
+          addCard("GET /posts", "Request failed: " + err.message, false);
+        }
+      }
+
+      document.getElementById("checkUsers").addEventListener("click", checkUsers);
+      document.getElementById("checkPosts").addEventListener("click", checkPosts);
+      document.getElementById("checkAll").addEventListener("click", async () => {
+        await checkUsers();
+        await checkPosts();
+      });
+      document.getElementById("clear").addEventListener("click", () => {
+        output.innerHTML = "";
+      });
+    </script>
+  </body>
+</html>
