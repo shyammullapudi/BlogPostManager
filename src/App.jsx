@@ -63,6 +63,7 @@ export default function App() {
 
   const handleSaveEdit = async (postId, updatedValues) => {
     setActionError('');
+    const postToEdit = posts.find((post) => post.id === postId);
     const previousPosts = posts;
     const nextPosts = posts.map((post) =>
       post.id === postId ? { ...post, ...updatedValues } : post
@@ -71,6 +72,9 @@ export default function App() {
     setPosts(nextPosts);
 
     try {
+      if (postToEdit?.userId === 0) {
+        return true;
+      }
       await updatePost(postId, updatedValues);
       return true;
     } catch (err) {
